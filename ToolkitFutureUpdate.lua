@@ -16,7 +16,8 @@ local White = Color3.new(1, 1, 1)
 -- ============================================================================
 -- THEMES. Pick one in CreateWindow({ Theme = "Default" | "Classic" | "Rose" }) or pass your own table of overrides.
 --   Default = black & white (the original look)
---   Classic = Potassium-executor style: warm near-black surfaces, gold #D4943C accent, green toggles, warm off-white text
+--   Classic = Potassium-executor style: warm near-black surfaces, gold #D4943C accent, green toggles, warm off-white text.
+--             Everything follows the theme automatically (tags, paragraph colors "Blue"/"Purple"/..., notification kinds).
 --   Rose    = dark navy glass with a hot-pink accent
 -- ============================================================================
 local Shared = {
@@ -49,6 +50,11 @@ local Palettes = {
 		Status = Color3.fromRGB(212, 148, 60), NotifBg = Color3.fromRGB(16, 15, 14),
 		StrokeHi = Color3.fromRGB(74, 73, 69), Frost = Color3.fromRGB(88, 86, 81), IconHi = Color3.fromRGB(234, 231, 224),
 		Dim = Color3.fromRGB(104, 103, 98),
+		-- named colors scripts may pass ("Blue", "Purple", "Orange", "Grey", ...) re-mapped onto the Potassium palette
+		Blue = Color3.fromRGB(212, 148, 60), Teal = Color3.fromRGB(152, 150, 143),
+		ParaOrange = Color3.fromRGB(212, 148, 60), ParaPurple = Color3.fromRGB(152, 150, 143), ParaGrey = Color3.fromRGB(104, 103, 98),
+		-- every Window:Tag uses this color in Classic (unless the tag sets KeepColor = true)
+		TagColor = Color3.fromRGB(212, 148, 60),
 		-- status colours (notification kinds: success / error / warn / info)
 		Green = Color3.fromRGB(84, 160, 98), Red = Color3.fromRGB(205, 84, 72), Amber = Color3.fromRGB(212, 148, 60),
 		-- switches
@@ -77,8 +83,11 @@ local ParagraphColors = {
 	Blue = Color3.fromRGB(59, 130, 246), Purple = Color3.fromRGB(139, 92, 255), Grey = Color3.fromRGB(148, 153, 166),
 }
 
+local ParagraphBase = {}
+for K, V in pairs(ParagraphColors) do ParagraphBase[K] = V end
+
 local TypeColors = {
-	success = Theme.Green, error = Theme.Red, warn = Theme.Amber, warning = Theme.Amber, info = Theme.Cyan,
+	success = Theme.Green, error = Theme.Red, fail = Theme.Red, failed = Theme.Red, warn = Theme.Amber, warning = Theme.Amber, info = Theme.Cyan,
 }
 
 -- Library:SetTheme("Classic") or Library:SetTheme({ Accent = Color3.fromRGB(...) , ... })
@@ -99,15 +108,20 @@ function Library:SetTheme(Name)
 		end
 	end
 	if type(Name) ~= "table" then
+		for K in pairs(Theme) do Theme[K] = nil end              -- wipe so nothing from a previous theme leaks
 		for K, V in pairs(Shared) do Theme[K] = V end             -- reset first so partial themes still work
 		for K, V in pairs(Palettes.Default) do Theme[K] = V end
-		Theme.Dim = nil
 	end
 	for K, V in pairs(Pal) do
 		if typeof(V) == "Color3" then Theme[K] = V end
 	end
 	Theme.Violet = Theme.Accent
+	for K, V in pairs(ParagraphBase) do ParagraphColors[K] = V end
+	if Theme.ParaOrange then ParagraphColors.Orange = Theme.ParaOrange end
+	if Theme.ParaPurple then ParagraphColors.Purple = Theme.ParaPurple end
+	if Theme.ParaGrey then ParagraphColors.Grey = Theme.ParaGrey end
 	TypeColors.success, TypeColors.error = Theme.Green, Theme.Red
+	TypeColors.fail, TypeColors.failed = Theme.Red, Theme.Red
 	TypeColors.warn, TypeColors.warning, TypeColors.info = Theme.Amber, Theme.Amber, Theme.Cyan
 	Library.ThemeName = type(Name) == "table" and "Custom" or tostring(Name)
 	return Library.ThemeName
@@ -1876,6 +1890,15 @@ function Elements:_Finish(O, Obj, C)
 		if C.Desc then C.Desc.Text = T end
 	end
 	function Obj:SetLockTitle(T) SetLockText(C, T) end
+	-- compat aliases (older scripts call these): SetValue -> Set, SetValues -> Refresh, GetValue/Get -> current value
+	if Obj.SetValue == nil then
+		function Obj:SetValue(...) if type(self.Set) == "function" then return self:Set(...) end end
+	end
+	if Obj.SetValues == nil then
+		function Obj:SetValues(...) if type(self.Refresh) == "function" then return self:Refresh(...) end end
+	end
+	if Obj.GetValue == nil then function Obj:GetValue() return self.Value end end
+	if Obj.Get == nil then function Obj:Get() return self.Value end end
 	function Obj:Lock(Title)
 		Obj.Locked = true
 		if Title ~= nil then SetLockText(C, Title) end
@@ -3377,7 +3400,9 @@ function Window:Tag(O)
 	if type(O) == "string" then O = { Title = O } end
 	O = O or {}
 	self._tagN += 1
-	local Col = ParseColor(O.Color, Theme.Accent)
+	local Themed = Theme.TagColor ~= nil and not O.KeepColor   -- Classic: tags follow the theme automatically
+	local Col = Themed and Theme.TagColor or ParseColor(O.Color, Theme.Accent)
+	local function TagText(Fallback) return Themed and Fallback or ParseColor(O.TextColor, Fallback) end
 	local Rec = {
 		Title = tostring(O.Title or "Tag"), HasIcon = O.Icon ~= nil and O.Icon ~= "",
 		MinTextW = tonumber(O.MinWidth) or 0,
@@ -3399,10 +3424,10 @@ function Window:Tag(O)
 		BackgroundTransparency = 1, Visible = Rec.HasIcon,
 	}, Tag)
 	local Ico
-	if Rec.HasIcon then Ico = IconLabel(Wrap, O.Icon, 13, ParseColor(O.TextColor, O.Solid and Col:Lerp(Color3.new(0, 0, 0), 0.82) or Col:Lerp(White, 0.4)), nil, "•") end
+	if Rec.HasIcon then Ico = IconLabel(Wrap, O.Icon, 13, TagText(O.Solid and Col:Lerp(Color3.new(0, 0, 0), 0.82) or Col:Lerp(White, 0.4)), nil, "•") end
 	local Lbl = New("TextLabel", {
 		Size = UDim2.fromOffset(20, 24), BackgroundTransparency = 1, Text = Rec.Title,
-		TextColor3 = ParseColor(O.TextColor, O.Solid and Col:Lerp(Color3.new(0, 0, 0), 0.82) or Col:Lerp(White, 0.5)), TextSize = 12, FontFace = FontBold, TextXAlignment = Left,
+		TextColor3 = TagText(O.Solid and Col:Lerp(Color3.new(0, 0, 0), 0.82) or Col:Lerp(White, 0.5)), TextSize = 12, FontFace = FontBold, TextXAlignment = Left,
 		TextTruncate = Enum.TextTruncate.AtEnd,
 	}, Tag)
 
