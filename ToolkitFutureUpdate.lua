@@ -691,8 +691,9 @@ end
 -- Toggle glass mode at runtime (re-applies every registered background)
 function Library:SetTransparent(V)
 	V = V and true or false
-	if Library.Glassmorphism then
-		-- glassmorphism always needs the transparent look; remember the wish for when it is switched off
+	if Library.Glassmorphism and Library.IsPC then
+		-- PC glassmorphism needs the transparent look; remember the wish for when it is switched off
+		-- (on mobile there is no blur, so the toggle is always honoured)
 		Library._PreGlassTransparent = V
 		Library.Transparent = true
 	else
@@ -3810,12 +3811,14 @@ function Library:CreateWindow(O)
 	Library:SetTheme(O.Theme or "Default")
 
 	-- Transparent = true/false, or a number 0-1 (1 = visible, 0 = invisible)
+	-- Mobile never starts transparent/glass unless the script explicitly asks for it (Transparent = true / Glassmorphism = true)
+	local GlassWanted = (O.Glassmorphism ~= false) and (Library.IsPC or O.Glassmorphism == true)
 	if type(O.Transparent) == "number" then
 		Library.Transparent = true
 		Library:SetOpacity(O.Transparent)
 	elseif O.Transparent == nil then
-		-- default: transparent glass (PC = acrylic blur, mobile = frosted see-through)
-		Library.Transparent = O.Glassmorphism ~= false
+		-- default: transparent glass on PC (acrylic blur), solid on mobile
+		Library.Transparent = GlassWanted
 	else
 		Library.Transparent = O.Transparent and true or false
 	end
@@ -3832,7 +3835,7 @@ function Library:CreateWindow(O)
 	if O.GlassBlur ~= nil then Library.GlassBlurSize = math.clamp(tonumber(O.GlassBlur) or 6, 0, 40) end
 	if O.GlassDistortion ~= nil then Library.GlassDistortion = math.clamp(tonumber(O.GlassDistortion) or 0.6, 0, 1) end
 	-- Glassmorphism = true turns the PC-only liquid glass on at start (optional, default off)
-	Library:SetGlassmorphism(O.Glassmorphism ~= false)
+	Library:SetGlassmorphism(GlassWanted)
 
 	if O.NotificationWidth ~= nil or O.NotificationHeight ~= nil then
 		Library:SetNotificationSize(O.NotificationWidth, O.NotificationHeight)
