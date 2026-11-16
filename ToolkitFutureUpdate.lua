@@ -16,8 +16,7 @@ local White = Color3.new(1, 1, 1)
 -- ============================================================================
 -- THEMES. Pick one in CreateWindow({ Theme = "Default" | "Classic" | "Rose" }) or pass your own table of overrides.
 --   Default = black & white (the original look)
---   Classic = Potassium-executor style: warm near-black surfaces, gold #D4943C accent, green toggles, warm off-white text.
---             Everything follows the theme automatically (tags, paragraph colors "Blue"/"Purple"/..., notification kinds).
+--   Classic = Potassium-executor style: near-black #101012 surfaces with a coral #F06A63 accent
 --   Rose    = dark navy glass with a hot-pink accent
 -- ============================================================================
 local Shared = {
@@ -34,32 +33,15 @@ local Palettes = {
 		Soft = Color3.fromRGB(235, 235, 235), IconDim = Color3.fromRGB(130, 130, 130), Cyan = Color3.fromRGB(210, 210, 210),
 		Pink = Color3.fromRGB(255, 77, 166), Orb = Color3.fromRGB(90, 90, 90), LogoBg = Color3.fromRGB(14, 14, 14),
 		Status = Color3.fromRGB(86, 90, 104), NotifBg = Color3.fromRGB(0, 0, 0),
-		ToggleOn = Color3.fromRGB(140, 140, 140), ToggleOff = Color3.fromRGB(8, 8, 8),
-		ToggleOnStroke = Color3.fromRGB(255, 255, 255), CheckOn = Color3.fromRGB(255, 255, 255),
 	},
 	Classic = {
-		-- Potassium palette
-		--   Primary text #EAE7E0 | Muted #98968F | Dim #686762 | Accent gold #D4943C
-		--   Toggle ON #54A062 | Toggle OFF #404046 | Error #CD5448
-		Bg = Color3.fromRGB(16, 15, 14), Bg2 = Color3.fromRGB(21, 20, 19), Card = Color3.fromRGB(27, 26, 24), CardHover = Color3.fromRGB(35, 34, 32),
-		Hover = Color3.fromRGB(44, 43, 40), Selected = Color3.fromRGB(34, 33, 31), Stroke = Color3.fromRGB(54, 53, 50), Track = Color3.fromRGB(64, 64, 70),
-		Text = Color3.fromRGB(234, 231, 224), Muted = Color3.fromRGB(152, 150, 143),
-		Accent = Color3.fromRGB(212, 148, 60), AccentDim = Color3.fromRGB(168, 118, 48), OnAccent = Color3.fromRGB(24, 22, 18),
-		Soft = Color3.fromRGB(226, 222, 214), IconDim = Color3.fromRGB(104, 103, 98), Cyan = Color3.fromRGB(152, 150, 143),
-		Pink = Color3.fromRGB(212, 148, 60), Orb = Color3.fromRGB(112, 80, 38), LogoBg = Color3.fromRGB(212, 148, 60),
-		Status = Color3.fromRGB(212, 148, 60), NotifBg = Color3.fromRGB(16, 15, 14),
-		StrokeHi = Color3.fromRGB(74, 73, 69), Frost = Color3.fromRGB(88, 86, 81), IconHi = Color3.fromRGB(234, 231, 224),
-		Dim = Color3.fromRGB(104, 103, 98),
-		-- named colors scripts may pass ("Blue", "Purple", "Orange", "Grey", ...) re-mapped onto the Potassium palette
-		Blue = Color3.fromRGB(212, 148, 60), Teal = Color3.fromRGB(152, 150, 143),
-		ParaOrange = Color3.fromRGB(212, 148, 60), ParaPurple = Color3.fromRGB(152, 150, 143), ParaGrey = Color3.fromRGB(104, 103, 98),
-		-- every Window:Tag uses this color in Classic (unless the tag sets KeepColor = true)
-		TagColor = Color3.fromRGB(212, 148, 60),
-		-- status colours (notification kinds: success / error / warn / info)
-		Green = Color3.fromRGB(84, 160, 98), Red = Color3.fromRGB(205, 84, 72), Amber = Color3.fromRGB(212, 148, 60),
-		-- switches
-		ToggleOn = Color3.fromRGB(84, 160, 98), ToggleOff = Color3.fromRGB(64, 64, 70),
-		ToggleOnStroke = Color3.fromRGB(112, 184, 126), CheckOn = Color3.fromRGB(84, 160, 98),
+		Bg = Color3.fromRGB(16, 16, 18), Bg2 = Color3.fromRGB(20, 20, 23), Card = Color3.fromRGB(25, 25, 29), CardHover = Color3.fromRGB(33, 33, 38),
+		Hover = Color3.fromRGB(42, 42, 48), Selected = Color3.fromRGB(32, 32, 37), Stroke = Color3.fromRGB(46, 46, 54), Track = Color3.fromRGB(46, 46, 54),
+		Text = Color3.fromRGB(238, 238, 241), Muted = Color3.fromRGB(148, 148, 158),
+		Accent = Color3.fromRGB(240, 106, 99), AccentDim = Color3.fromRGB(196, 84, 79), OnAccent = Color3.fromRGB(255, 255, 255),
+		Soft = Color3.fromRGB(236, 236, 240), IconDim = Color3.fromRGB(128, 128, 140), Cyan = Color3.fromRGB(150, 150, 170),
+		Pink = Color3.fromRGB(240, 106, 99), Orb = Color3.fromRGB(190, 78, 74), LogoBg = Color3.fromRGB(240, 106, 99),
+		Status = Color3.fromRGB(176, 78, 73), NotifBg = Color3.fromRGB(16, 16, 18),
 	},
 	Rose = {
 		Bg = Color3.fromRGB(9, 10, 16), Bg2 = Color3.fromRGB(17, 18, 27), Card = Color3.fromRGB(22, 23, 34), CardHover = Color3.fromRGB(32, 33, 48),
@@ -83,11 +65,8 @@ local ParagraphColors = {
 	Blue = Color3.fromRGB(59, 130, 246), Purple = Color3.fromRGB(139, 92, 255), Grey = Color3.fromRGB(148, 153, 166),
 }
 
-local ParagraphBase = {}
-for K, V in pairs(ParagraphColors) do ParagraphBase[K] = V end
-
 local TypeColors = {
-	success = Theme.Green, error = Theme.Red, fail = Theme.Red, failed = Theme.Red, warn = Theme.Amber, warning = Theme.Amber, info = Theme.Cyan,
+	success = Theme.Green, error = Theme.Red, warn = Theme.Amber, warning = Theme.Amber, info = Theme.Cyan,
 }
 
 -- Library:SetTheme("Classic") or Library:SetTheme({ Accent = Color3.fromRGB(...) , ... })
@@ -108,21 +87,13 @@ function Library:SetTheme(Name)
 		end
 	end
 	if type(Name) ~= "table" then
-		for K in pairs(Theme) do Theme[K] = nil end              -- wipe so nothing from a previous theme leaks
-		for K, V in pairs(Shared) do Theme[K] = V end             -- reset first so partial themes still work
-		for K, V in pairs(Palettes.Default) do Theme[K] = V end
+		for K, V in pairs(Palettes.Default) do Theme[K] = V end   -- reset first so partial themes still work
 	end
 	for K, V in pairs(Pal) do
 		if typeof(V) == "Color3" then Theme[K] = V end
 	end
 	Theme.Violet = Theme.Accent
-	for K, V in pairs(ParagraphBase) do ParagraphColors[K] = V end
-	if Theme.ParaOrange then ParagraphColors.Orange = Theme.ParaOrange end
-	if Theme.ParaPurple then ParagraphColors.Purple = Theme.ParaPurple end
-	if Theme.ParaGrey then ParagraphColors.Grey = Theme.ParaGrey end
-	TypeColors.success, TypeColors.error = Theme.Green, Theme.Red
-	TypeColors.fail, TypeColors.failed = Theme.Red, Theme.Red
-	TypeColors.warn, TypeColors.warning, TypeColors.info = Theme.Amber, Theme.Amber, Theme.Cyan
+	TypeColors.info = Theme.Cyan
 	Library.ThemeName = type(Name) == "table" and "Custom" or tostring(Name)
 	return Library.ThemeName
 end
@@ -691,9 +662,8 @@ end
 -- Toggle glass mode at runtime (re-applies every registered background)
 function Library:SetTransparent(V)
 	V = V and true or false
-	if Library.Glassmorphism and Library.IsPC then
-		-- PC glassmorphism needs the transparent look; remember the wish for when it is switched off
-		-- (on mobile there is no blur, so the toggle is always honoured)
+	if Library.Glassmorphism then
+		-- glassmorphism always needs the transparent look; remember the wish for when it is switched off
 		Library._PreGlassTransparent = V
 		Library.Transparent = true
 	else
@@ -1891,15 +1861,6 @@ function Elements:_Finish(O, Obj, C)
 		if C.Desc then C.Desc.Text = T end
 	end
 	function Obj:SetLockTitle(T) SetLockText(C, T) end
-	-- compat aliases (older scripts call these): SetValue -> Set, SetValues -> Refresh, GetValue/Get -> current value
-	if Obj.SetValue == nil then
-		function Obj:SetValue(...) if type(self.Set) == "function" then return self:Set(...) end end
-	end
-	if Obj.SetValues == nil then
-		function Obj:SetValues(...) if type(self.Refresh) == "function" then return self:Refresh(...) end end
-	end
-	if Obj.GetValue == nil then function Obj:GetValue() return self.Value end end
-	if Obj.Get == nil then function Obj:Get() return self.Value end end
 	function Obj:Lock(Title)
 		Obj.Locked = true
 		if Title ~= nil then SetLockText(C, Title) end
@@ -1946,8 +1907,8 @@ function Elements:Toggle(O)
 		Render = function(V)
 			-- checked = solid accent, unchecked = glass-aware
 			Box.BackgroundTransparency = V and 0 or BgCalc(Glass(0, 0.45))
-			Tween(Box, 0.15, { BackgroundColor3 = V and Theme.CheckOn or Theme.Bg2 })
-			Tween(BS, 0.15, { Color = V and Theme.CheckOn:Lerp(White, 0.3) or Theme.StrokeHi })
+			Tween(Box, 0.15, { BackgroundColor3 = V and Theme.Accent or Theme.Bg2 })
+			Tween(BS, 0.15, { Color = V and Theme.Accent:Lerp(White, 0.3) or Theme.StrokeHi })
 			Tween(Chk, 0.15, { ImageTransparency = V and 0 or 1 })
 			Tween(ChkFB, 0.15, { TextTransparency = V and 0 or 1 })
 		end
@@ -1956,7 +1917,7 @@ function Elements:Toggle(O)
 	else
 		local Track = New("Frame", {
 			AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.fromOffset(46, 24),
-			BackgroundColor3 = Theme.ToggleOff, BorderSizePixel = 0,
+			BackgroundColor3 = Theme.Bg2, BorderSizePixel = 0,
 		}, C.Head)
 		Corner(Track, 12)
 		FX.Depth(Track, "Button")
@@ -1972,8 +1933,8 @@ function Elements:Toggle(O)
 				if V then return Library.Transparent and 0.25 or 0 end
 				return Library.Transparent and 0.45 or 0
 			end)
-			Tween(Track, 0.18, { BackgroundColor3 = V and Theme.ToggleOn or Theme.ToggleOff })
-			Tween(TS, 0.18, { Color = V and Theme.ToggleOnStroke or Theme.StrokeHi })
+			Tween(Track, 0.18, { BackgroundColor3 = V and Theme.AccentDim or Theme.Bg2 })
+			Tween(TS, 0.18, { Color = V and Theme.Accent or Theme.StrokeHi })
 			Tween(Knob, 0.18, {
 				Position = V and UDim2.new(1, -20, 0.5, 0) or UDim2.new(0, 4, 0.5, 0),
 				BackgroundColor3 = V and Theme.Text or Theme.Muted,
@@ -3401,9 +3362,7 @@ function Window:Tag(O)
 	if type(O) == "string" then O = { Title = O } end
 	O = O or {}
 	self._tagN += 1
-	local Themed = Theme.TagColor ~= nil and not O.KeepColor   -- Classic: tags follow the theme automatically
-	local Col = Themed and Theme.TagColor or ParseColor(O.Color, Theme.Accent)
-	local function TagText(Fallback) return Themed and Fallback or ParseColor(O.TextColor, Fallback) end
+	local Col = ParseColor(O.Color, Theme.Accent)
 	local Rec = {
 		Title = tostring(O.Title or "Tag"), HasIcon = O.Icon ~= nil and O.Icon ~= "",
 		MinTextW = tonumber(O.MinWidth) or 0,
@@ -3425,10 +3384,10 @@ function Window:Tag(O)
 		BackgroundTransparency = 1, Visible = Rec.HasIcon,
 	}, Tag)
 	local Ico
-	if Rec.HasIcon then Ico = IconLabel(Wrap, O.Icon, 13, TagText(O.Solid and Col:Lerp(Color3.new(0, 0, 0), 0.82) or Col:Lerp(White, 0.4)), nil, "•") end
+	if Rec.HasIcon then Ico = IconLabel(Wrap, O.Icon, 13, ParseColor(O.TextColor, O.Solid and Col:Lerp(Color3.new(0, 0, 0), 0.82) or Col:Lerp(White, 0.4)), nil, "•") end
 	local Lbl = New("TextLabel", {
 		Size = UDim2.fromOffset(20, 24), BackgroundTransparency = 1, Text = Rec.Title,
-		TextColor3 = TagText(O.Solid and Col:Lerp(Color3.new(0, 0, 0), 0.82) or Col:Lerp(White, 0.5)), TextSize = 12, FontFace = FontBold, TextXAlignment = Left,
+		TextColor3 = ParseColor(O.TextColor, O.Solid and Col:Lerp(Color3.new(0, 0, 0), 0.82) or Col:Lerp(White, 0.5)), TextSize = 12, FontFace = FontBold, TextXAlignment = Left,
 		TextTruncate = Enum.TextTruncate.AtEnd,
 	}, Tag)
 
@@ -3811,14 +3770,12 @@ function Library:CreateWindow(O)
 	Library:SetTheme(O.Theme or "Default")
 
 	-- Transparent = true/false, or a number 0-1 (1 = visible, 0 = invisible)
-	-- Mobile never starts transparent/glass unless the script explicitly asks for it (Transparent = true / Glassmorphism = true)
-	local GlassWanted = (O.Glassmorphism ~= false) and (Library.IsPC or O.Glassmorphism == true)
 	if type(O.Transparent) == "number" then
 		Library.Transparent = true
 		Library:SetOpacity(O.Transparent)
 	elseif O.Transparent == nil then
-		-- default: transparent glass on PC (acrylic blur), solid on mobile
-		Library.Transparent = GlassWanted
+		-- default: transparent glass (PC = acrylic blur, mobile = frosted see-through)
+		Library.Transparent = O.Glassmorphism ~= false
 	else
 		Library.Transparent = O.Transparent and true or false
 	end
@@ -3835,7 +3792,7 @@ function Library:CreateWindow(O)
 	if O.GlassBlur ~= nil then Library.GlassBlurSize = math.clamp(tonumber(O.GlassBlur) or 6, 0, 40) end
 	if O.GlassDistortion ~= nil then Library.GlassDistortion = math.clamp(tonumber(O.GlassDistortion) or 0.6, 0, 1) end
 	-- Glassmorphism = true turns the PC-only liquid glass on at start (optional, default off)
-	Library:SetGlassmorphism(GlassWanted)
+	Library:SetGlassmorphism(O.Glassmorphism ~= false)
 
 	if O.NotificationWidth ~= nil or O.NotificationHeight ~= nil then
 		Library:SetNotificationSize(O.NotificationWidth, O.NotificationHeight)
